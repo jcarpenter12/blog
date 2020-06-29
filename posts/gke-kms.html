@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Words? | Securing Secrets on Google Kubernetes Engine Using Cloud Build and Google’s Key Management Service (KMS) - Part 1 Building the Infrastructure with Terraform </title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta property="og:title" content="Securing Secrets on Google Kubernetes Engine Using Cloud Build and Google’s Key Management Service (KMS) - Part 1 Building the Infrastructure with Terraform ">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="blog/posts/gke-kms">
+  <meta property="og:description" content="">
+  <meta property="og:site_name" content="Words?">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:url" content="blog/posts/gke-kms">
+  <meta name="twitter:title" content="Securing Secrets on Google Kubernetes Engine Using Cloud Build and Google’s Key Management Service (KMS) - Part 1 Building the Infrastructure with Terraform ">
+  <meta name="twitter:description" content="">
+
+  
+    
+      <meta property="og:image" content="blog/assets/documentation/00_cover-2d7823ce46c8647412a138ef583366a71c65e6daa95501e7b6c383d72ce84ac7.PNG">
+      <meta name="twitter:image" content="blog/assets/documentation/00_cover-2d7823ce46c8647412a138ef583366a71c65e6daa95501e7b6c383d72ce84ac7.PNG">
+    
+  
+
+  <link href="blog/feed.xml" type="application/rss+xml" rel="alternate" title="Words? Last 10 blog posts" />
+
+  
+
+  
+
+    
+      <link rel="icon" type="image/x-icon" href="/assets/favicon-light-a98c41efc5ed9fcc06ac664c9e2f7a9b3c3b2e0a52357d221fe382f6f4abc8fc.ico">
+      <link rel="apple-touch-icon" href="/assets/apple-touch-icon-light-87d1f2a3a19b1500e5c1626a0492025ca5f7f97d24540dc5900288e92112925a.png">
+      <link rel="stylesheet" type="text/css" title="light" id="light" href="/assets/light-bb1553a18d0f1ccfe1aabc010584c49b4277a88503216b78906ba719e30019c1.css">
+      <link rel="stylesheet" type="text/css" title="dark" id="dark" href="/assets/dark-831218bc9e41aef39ee6a0bae4501195bccafcc13101ae2b9cd20493a6ec04c0.css" disabled="true">
+    
+
+  
+
+</head>
+
+<body>
+  <main>
+    <div class="grid grid-centered">
+      <div class="grid-cell">
+        <nav class="header-nav scrollappear">
+  <a href="/" class="header-logo" title="Words?">Words?</a>
+  <ul class="header-links">
+    
+      <li>
+        <a href="/about" title="About me">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-about">
+  <use href="/assets/about-ecf154b571ab8034ae00aeed91a3b7ad68db80b46d958753ad6216c919486e88.svg#icon-about" xlink:href="/assets/about-ecf154b571ab8034ae00aeed91a3b7ad68db80b46d958753ad6216c919486e88.svg#icon-about"></use>
+</svg>
+
+        </a>
+      </li>
+    
+    
+    
+    
+    
+      <li>
+        <a href="https://github.com/jcarpenter12" rel="noreferrer noopener" target="_blank" title="GitHub">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-github">
+  <use href="/assets/github-094f81040819f34343ee6ffff0980f17e2807b08b595eaaf66ae3554934fd78d.svg#icon-github" xlink:href="/assets/github-094f81040819f34343ee6ffff0980f17e2807b08b595eaaf66ae3554934fd78d.svg#icon-github"></use>
+</svg>
+
+        </a>
+      </li>
+    
+    
+    
+    
+    
+    
+    
+      <li>
+        <a href="https://www.linkedin.com/in/jack-carpenter-59a566b0" rel="noreferrer noopener" target="_blank" title="LinkedIn">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-linkedin">
+  <use href="/assets/linkedin-cdc5c107044324a3dfbea2e9ead15873f8dee304c37d73a046988956b706256e.svg#icon-linkedin" xlink:href="/assets/linkedin-cdc5c107044324a3dfbea2e9ead15873f8dee304c37d73a046988956b706256e.svg#icon-linkedin"></use>
+</svg>
+
+        </a>
+      </li>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <li>
+        <a href="/feed.xml" rel="noreferrer noopener" target="_blank" title="RSS">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-rss">
+  <use href="/assets/rss-541ec5cea9cefd10d2fcfec01888f3f231a8829940249835fa7b7b3a12ae0d0d.svg#icon-rss" xlink:href="/assets/rss-541ec5cea9cefd10d2fcfec01888f3f231a8829940249835fa7b7b3a12ae0d0d.svg#icon-rss"></use>
+</svg>
+
+        </a>
+      </li>
+    
+    
+      <li>
+        <a onclick="toggle()" title="Toggle Theme">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-theme">
+  <use href="/assets/theme-66869e0bf8dab34bae1c86bda400327b772e0be69e8dc28d3ede896e771320ed.svg#icon-theme" xlink:href="/assets/theme-66869e0bf8dab34bae1c86bda400327b772e0be69e8dc28d3ede896e771320ed.svg#icon-theme"></use>
+</svg>
+
+        </a>
+      </li>
+    
+  </ul>
+</nav>
+
+
+
+        <article class="article scrollappear">
+          <header class="article-header">
+            <h1>Securing Secrets on Google Kubernetes Engine Using Cloud Build and Google’s Key Management Service (KMS) - Part 1 Building the Infrastructure with Terraform </h1>
+            <p></p>
+            <div class="article-list-footer">
+  <span class="article-list-date">
+    June 12, 2020
+  </span>
+  <span class="article-list-divider">-</span>
+  <span class="article-list-minutes">
+    
+    
+      8 minute read
+    
+  </span>
+  <span class="article-list-divider">-</span>
+  <div class="article-list-tags">
+    
+      
+      <a href="/tag/gcp" title="See all posts with tag 'GCP'">GCP</a>
+    
+      
+      <a href="/tag/k8s" title="See all posts with tag 'K8s'">K8s</a>
+    
+      
+      <a href="/tag/terraform" title="See all posts with tag 'Terraform'">Terraform</a>
+    
+      
+      <a href="/tag/cloudbuild" title="See all posts with tag 'Cloud-Build'">Cloud-Build</a>
+    
+      
+      <a href="/tag/kms" title="See all posts with tag 'KMS'">KMS</a>
+    
+  </div>
+</div>
+          </header>
+
+          <div class="article-content">
+            <p><a href="/assets/documentation/00_cover-2d7823ce46c8647412a138ef583366a71c65e6daa95501e7b6c383d72ce84ac7.PNG">
+  <img src="/assets/documentation/00_cover-2d7823ce46c8647412a138ef583366a71c65e6daa95501e7b6c383d72ce84ac7.PNG" alt="Chalk intro" class="zooming" data-rjs="/assets/documentation/00_cover-2d7823ce46c8647412a138ef583366a71c65e6daa95501e7b6c383d72ce84ac7.PNG" data-zooming-width="913" data-zooming-height="200" />
+</a></p>
+
+<p>Over these next few posts I will go over the process for deploying and securing apps on Google Cloud’s Kubernetes Engine (GKE).</p>
+
+<h3 id="purpose">Purpose</h3>
+<p>Kubernetes is a widely used framework used to run and manage containerised applications built using Docker. Applications often require access to sensitive information, such as passwords or API keys that need to be stored on the cluster in ‘secrets’ (more info <a href="https://kubernetes.io/docs/concepts/configuration/secret/">here</a>). By default, Google encrypts all customer content at rest but this still may not be secure enough for many applications, the reason being that the secrets are stored in the Kubernetes etcd, a distributed key value store used to store data about the cluster. If the etcd is accessed it would mean that the attacker would have access to the same secrets as being used by the applications that run on the cluster. This series of posts will go over how to enable application layer encryption on a GKE cluster and build a CI/CD pipeline using cloud build in order to store and deploy secrets securely that are stored in Google Secrets Manager to the cluster.</p>
+
+<h3 id="overview">Overview</h3>
+<p>Application layer encryption on GKE involves a process known as Envelope Encryption in order to secure secrets in the etcd. A key is stored locally on the etcd known as a DEK (Data Encryption Key) that is used to encrypt the secrets. This DEK itself is also encrypted itself using a KEK (Key Encryption Key), crucially this key is not stored on the etcd or on the Kubernetes master node API but instead is stored in a remote Key Management System (in this example I am using Google’s own KMS service but other vendors can be used such as Hashicorp’s Vault). The advantage of this is that it ensures that the secrets stored on the etcd are encrypted and that if an attacker were to gain access to the Kubernetes master node and the etcd they would still not have access to the keys stored in KMS in order to decrypt those secrets. Other advantages of using KMS include the ability to rotate keys and ‘Crypto Shredding’, the process in which a key is removed from the key chain meaning that the DEK is no longer able to be decrypted rendering the cluster applications useless if it were compromised.</p>
+
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+  <li>A Google Cloud project with access to set up and create service accounts and control IAM roles</li>
+  <li>A basic understanding of Terraform</li>
+  <li>A basic understanding of Kubernetes and the cli component kubectl</li>
+</ul>
+
+<h3 id="setting-up-the-gke-cluster-and-kms-key-ring-using-terraform">Setting up the GKE cluster and KMS Key Ring Using Terraform</h3>
+<p>For this post I will be using Terraform in order to set up and manage the required infrastructure for running the applications on GKE. Terraform is an open source infrastructure as code application that makes it simple to build repeatable pipelines that allow users to set up and tear down resources quickly. Some more info and a guide to setting it up can be found <a href="https://www.terraform.io/intro/index.html">here</a>.</p>
+
+<h3 id="creating-a-service-account-for-terraform">Creating a Service Account for Terraform</h3>
+<p>As Terraform is used to manage infrastructure in the cloud it requires access to services that most users will not require and as such it is good practice to use a separate service account for it.</p>
+
+<ul>
+  <li>In the drop down menu in the cloud console select ‘I AM Admin’ &gt; ‘Service Accounts’ &gt; ‘Create Service Account’.</li>
+</ul>
+
+<p><a href="/assets/documentation/01_tf_sa-1dffb8ae149218ed4101de1b254c442515ffd52f441c2d9a6d736ffc0164777b.png">
+  <img src="/assets/documentation/01_tf_sa-1dffb8ae149218ed4101de1b254c442515ffd52f441c2d9a6d736ffc0164777b.png" alt="Terraform Service Account" class="zooming" data-rjs="/assets/documentation/01_tf_sa-1dffb8ae149218ed4101de1b254c442515ffd52f441c2d9a6d736ffc0164777b.png" data-zooming-width="555" data-zooming-height="345" />
+</a></p>
+
+<ul>
+  <li>
+    <p>Assign project role as ‘Editor’ on the next screen. As well as Security Admin role, used in order to update the GKE service account to use the KMS key for the application layer encryption.</p>
+  </li>
+  <li>
+    <p>In the ‘Grant Users Access’ section assign your own account as the admin role.</p>
+  </li>
+  <li>
+    <p>Create a key and select ‘JSON’. Save the file to your local machine that you intend to run terraform from, or if using cloud shell configure it to use that account. Name it something sensible so that you can easily find it. NOTE: This service account key has admin rights to your project so be careful with it. If you want to avoid any uncertainty delete the key from the Google Cloud Console once you are finished with it.</p>
+  </li>
+</ul>
+
+<h3 id="enabling-apis">Enabling APIs</h3>
+
+<p>In order to run the terraform scripts the following APIs need to be enabled</p>
+<ul>
+  <li>Cloud Key Management Service (KMS) API</li>
+  <li>Kubernetes Engine API</li>
+  <li>Cloud Build</li>
+  <li>Secret Manager</li>
+</ul>
+
+<p>Go to API &amp; Services in the Cloud Console or use the gcloud command line util like so:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">gcloud services <span class="nb">enable </span>SERVICE_NAME</code></pre></figure>
+
+<p><a href="/assets/documentation/02_enable_api-1aeb624aa634151ef2a1b786e5c3d0a501b7e5c66b161f63ace8fea4d5483343.png">
+  <img src="/assets/documentation/02_enable_api-1aeb624aa634151ef2a1b786e5c3d0a501b7e5c66b161f63ace8fea4d5483343.png" alt="Terraform Service Account" class="zooming" data-rjs="/assets/documentation/02_enable_api-1aeb624aa634151ef2a1b786e5c3d0a501b7e5c66b161f63ace8fea4d5483343.png" data-zooming-width="679" data-zooming-height="277" />
+</a></p>
+
+<h3 id="terraform">Terraform</h3>
+
+<h4 id="terraform-state-gcs-bucket">Terraform State GCS Bucket</h4>
+<p>When using Terraform locally by default it will save your state (more info <a href="https://www.terraform.io/docs/state/index.html">here</a>) to your machine in a file named <code class="highlighter-rouge">terraform.tfstate</code>, this is okay when you are the sole owner of the project but in a real world situation it is best that these files are stored remotely in GCS so that other users can run the Terraform scripts and retrieve the current state of the environment.</p>
+
+<p>As this will be outside the Terraform script, to store the state this bucket should be created manually from the gui or the command line. NOTE: the name will need to be unique, so the following command will need to be changed to suit your needs.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">gsutil mb gs://jc-terraform-state</code></pre></figure>
+
+<p>For this demonstration the Terraform setup consists of the following scripts</p>
+
+<ul>
+  <li><code class="highlighter-rouge">main.tf</code> - The main entry point of the Terraform script</li>
+  <li><code class="highlighter-rouge">variables.tf</code> - The variables definition file</li>
+  <li><code class="highlighter-rouge">terraform.tfvar</code> - Used to override the variables, this is especially useful for reusing the Terraform scripts for different environments. In this example we will just use the one</li>
+  <li><code class="highlighter-rouge">backend_config.hcl</code> - Variables cannot be used within the Terraform backend setup and this file can be specified at runtime in order to set this up for different environments</li>
+</ul>
+
+<p>The source for these files can be found <a href="https://github.com/jcarpenter12/gke-kms-infrastructure">here</a>. You will need to update the <code class="highlighter-rouge">terraform.tfvar</code> and <code class="highlighter-rouge">backend_config.hcl</code> with your project and bucket details.</p>
+
+<p>I will not go into complete detail about each of the Terraform config files but below I have outlined the main.tf with comments.</p>
+
+<figure class="highlight"><pre><code class="language-terraform" data-lang="terraform"><span class="c1">// Setup provider</span>
+<span class="k">provider</span> <span class="s2">"google"</span> <span class="p">{</span>
+
+  <span class="nx">credentials</span> <span class="p">=</span> <span class="nx">file</span><span class="p">(</span><span class="kd">var</span><span class="p">.</span><span class="nx">credentials</span><span class="p">)</span>
+
+  <span class="nx">project</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">project</span>
+  <span class="nx">region</span>  <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">region</span>
+  <span class="nx">zone</span>    <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">zone</span>
+<span class="p">}</span>
+
+<span class="c1">// At this time the beta is required in order to use the kms service with terraform</span>
+<span class="k">provider</span> <span class="s2">"google-beta"</span> <span class="p">{</span>
+
+  <span class="nx">credentials</span> <span class="p">=</span> <span class="nx">file</span><span class="p">(</span><span class="kd">var</span><span class="p">.</span><span class="nx">credentials</span><span class="p">)</span>
+
+  <span class="nx">project</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">project</span>
+  <span class="nx">region</span>  <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">region</span>
+  <span class="nx">zone</span>    <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">zone</span>
+<span class="p">}</span>
+
+<span class="k">terraform</span> <span class="p">{</span>
+  <span class="nx">backend</span> <span class="s2">"gcs"</span> <span class="p">{}</span>
+<span class="p">}</span>
+<span class="c1">// Used to get the project number so the gke account used to set up the cluster</span>
+<span class="c1">// can be assigned permissons for the application layer encryption</span>
+<span class="k">data</span> <span class="s2">"google_project"</span> <span class="s2">"project"</span> <span class="p">{</span>
+<span class="p">}</span>
+
+<span class="c1">// Create a kms key ring to store the key</span>
+<span class="k">resource</span> <span class="s2">"google_kms_key_ring"</span> <span class="s2">"key_ring"</span> <span class="p">{</span>
+  <span class="nx">project</span>  <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">project</span>
+  <span class="nx">name</span>     <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">env</span><span class="k">}</span><span class="s2">-gke-key-ring"</span>
+  <span class="nx">location</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">region</span>
+<span class="p">}</span>
+
+<span class="c1">// Create the crypto key within the newly generated key ring</span>
+<span class="k">resource</span> <span class="s2">"google_kms_crypto_key"</span> <span class="s2">"kube_secrets_key"</span> <span class="p">{</span>
+  <span class="nx">name</span>     <span class="p">=</span> <span class="s2">"</span><span class="k">${</span><span class="kd">var</span><span class="p">.</span><span class="nx">env</span><span class="k">}</span><span class="s2">_gke_secrets_key"</span>
+  <span class="nx">key_ring</span> <span class="p">=</span> <span class="nx">google_kms_key_ring</span><span class="p">.</span><span class="nx">key_ring</span><span class="p">.</span><span class="nx">self_link</span>
+<span class="p">}</span>
+
+<span class="c1">// The service account used to spin up the cluster requires access to the</span>
+<span class="c1">// crypto key above in order to apply it to the gke cluster</span>
+<span class="k">resource</span> <span class="s2">"google_project_iam_binding"</span> <span class="s2">"gke-sa-role-kms"</span> <span class="p">{</span>
+  <span class="nx">role</span>    <span class="p">=</span> <span class="s2">"roles/cloudkms.cryptoKeyEncrypterDecrypter"</span>
+  <span class="nx">members</span> <span class="p">=</span> <span class="p">[</span>
+   <span class="s2">"serviceAccount:service-</span><span class="k">${data</span><span class="p">.</span><span class="nx">google_project</span><span class="p">.</span><span class="nx">project</span><span class="p">.</span><span class="nx">number</span><span class="k">}</span><span class="s2">@container-engine-robot.iam.gserviceaccount.com"</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="c1">//Enable Cloud Build to Access the Secret Manager for deploying secrets</span>
+<span class="k">resource</span> <span class="s2">"google_project_iam_binding"</span> <span class="s2">"cb-sa-role-sm"</span> <span class="p">{</span>
+  <span class="nx">role</span>    <span class="p">=</span> <span class="s2">"roles/secretmanager.secretAccessor"</span>
+  <span class="nx">members</span> <span class="p">=</span> <span class="p">[</span>
+   <span class="s2">"serviceAccount:</span><span class="k">${data</span><span class="p">.</span><span class="nx">google_project</span><span class="p">.</span><span class="nx">project</span><span class="p">.</span><span class="nx">number</span><span class="k">}</span><span class="s2">@cloudbuild.gserviceaccount.com"</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="c1">//Enable Cloud Build to Access the GKE Cluster to Deploy Apps</span>
+<span class="k">resource</span> <span class="s2">"google_project_iam_binding"</span> <span class="s2">"cb-sa-role-gke"</span> <span class="p">{</span>
+  <span class="nx">role</span>    <span class="p">=</span> <span class="s2">"roles/container.developer"</span>
+  <span class="nx">members</span> <span class="p">=</span> <span class="p">[</span>
+   <span class="s2">"serviceAccount:</span><span class="k">${data</span><span class="p">.</span><span class="nx">google_project</span><span class="p">.</span><span class="nx">project</span><span class="p">.</span><span class="nx">number</span><span class="k">}</span><span class="s2">@cloudbuild.gserviceaccount.com"</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="c1">// Create k8s cluster</span>
+<span class="k">resource</span> <span class="s2">"google_container_cluster"</span> <span class="s2">"primary"</span> <span class="p">{</span>
+  <span class="k">provider</span> <span class="p">=</span> <span class="nx">google</span><span class="err">-</span><span class="nx">beta</span>
+  <span class="nx">name</span>     <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">cluster_name</span>
+  <span class="nx">location</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">region</span>
+  <span class="nx">initial_node_count</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">initial_node_count</span>
+
+  <span class="c1">// this enables application layer encryption on the gke cluster and points to</span>
+  <span class="c1">// the key used to encrypt secrets</span>
+  <span class="nx">database_encryption</span> <span class="p">{</span>
+    <span class="nx">state</span> <span class="p">=</span> <span class="s2">"ENCRYPTED"</span>
+    <span class="nx">key_name</span> <span class="p">=</span> <span class="nx">google_kms_crypto_key</span><span class="p">.</span><span class="nx">kube_secrets_key</span><span class="p">.</span><span class="nx">self_link</span>
+  <span class="p">}</span>
+
+  <span class="nx">master_auth</span> <span class="p">{</span>
+    <span class="nx">username</span> <span class="p">=</span> <span class="s2">""</span>
+    <span class="nx">password</span> <span class="p">=</span> <span class="s2">""</span>
+
+    <span class="nx">client_certificate_config</span> <span class="p">{</span>
+      <span class="nx">issue_client_certificate</span> <span class="p">=</span> <span class="kc">false</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="nx">node_config</span> <span class="p">{</span>
+
+     <span class="nx">oauth_scopes</span> <span class="p">=</span> <span class="p">[</span>
+      <span class="s2">"https://www.googleapis.com/auth/logging.write"</span><span class="p">,</span>
+      <span class="s2">"https://www.googleapis.com/auth/monitoring"</span><span class="p">,</span>
+      <span class="s2">"https://www.googleapis.com/auth/devstorage.read_only"</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="nx">preemptible</span>  <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">preemptible</span>
+    <span class="nx">machine_type</span> <span class="p">=</span> <span class="kd">var</span><span class="p">.</span><span class="nx">machine_type</span>
+
+    <span class="nx">metadata</span> <span class="p">=</span> <span class="p">{</span>
+      <span class="nx">disable</span><span class="err">-</span><span class="nx">legacy</span><span class="err">-</span><span class="nx">endpoints</span> <span class="p">=</span> <span class="s2">"true"</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="nx">depends_on</span> <span class="p">=</span> <span class="p">[</span><span class="nx">google_kms_crypto_key</span><span class="p">.</span><span class="nx">kube_secrets_key</span><span class="p">,</span><span class="nx">google_project_iam_binding</span><span class="p">.</span><span class="nx">gke</span><span class="err">-</span><span class="nx">sa</span><span class="err">-</span><span class="nx">role</span><span class="err">-</span><span class="nx">kms</span><span class="p">]</span>
+<span class="p">}</span></code></pre></figure>
+
+<h4 id="running-the-terraform-script">Running the Terraform Script</h4>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">cd </span>terraform/
+terraform init
+<span class="c"># This will display the deployment plan for the script</span>
+terraform plan
+<span class="c"># This will apply the script and create the resources in your project</span>
+terraform apply</code></pre></figure>
+
+<p>Once that has been run go to the Cloud Console and you should see that the cluster is up and running and that the cryptographic key has been created. In the next part of this blog I will go over writing an application and deploying it to this newly created cluster.</p>
+
+<h4 id="destroying-resources-with-terraform">Destroying Resources with Terraform</h4>
+<p>If you would like to remove the resources that have been created by Terraform
+you will need to run the following:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">terraform destroy</code></pre></figure>
+
+<p>NOTE: By default as a security measure Google does not allow the KMS key ring
+or cryptographic keys to be recreated once they have been destroyed. They are
+maintained in the project in destroyed state. So if all resources are destroyed
+you will not be able to run the script again until you have created a new key
+chain and key chain with a different name to the original within the Terraform
+script.</p>
+
+<p>If you would like to remove a specific resource instead, say the GKE cluster as
+this is the resource that incurs the largest cost run the following:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">terraform destroy <span class="nt">-target</span> RESOURCE_TYPE.NAME
+<span class="c"># GKE example</span>
+terraform destroy <span class="nt">-targert</span> google_container_cluster.primary</code></pre></figure>
+
+
+          </div>
+          <div class="article-share">
+            
+            
+            <a href="https://twitter.com/home?status=Securing+Secrets+on+Google+Kubernetes+Engine+Using+Cloud+Build+and+Google%E2%80%99s+Key+Management+Service+...%20-%20blog/posts/gke-kms" title="Share on Twitter" rel="noreferrer noopener" target="_blank">
+              <svg viewBox="0 0 512 512"><path d="M492 109.5c-17.4 7.7-36 12.9-55.6 15.3 20-12 35.4-31 42.6-53.6 -18.7 11.1-39.4 19.2-61.5 23.5C399.8 75.8 374.6 64 346.8 64c-53.5 0-96.8 43.4-96.8 96.9 0 7.6 0.8 15 2.5 22.1 -80.5-4-151.9-42.6-199.6-101.3 -8.3 14.3-13.1 31-13.1 48.7 0 33.6 17.2 63.3 43.2 80.7C67 210.7 52 206.3 39 199c0 0.4 0 0.8 0 1.2 0 47 33.4 86.1 77.7 95 -8.1 2.2-16.7 3.4-25.5 3.4 -6.2 0-12.3-0.6-18.2-1.8 12.3 38.5 48.1 66.5 90.5 67.3 -33.1 26-74.9 41.5-120.3 41.5 -7.8 0-15.5-0.5-23.1-1.4C62.8 432 113.7 448 168.3 448 346.6 448 444 300.3 444 172.2c0-4.2-0.1-8.4-0.3-12.5C462.6 146 479 129 492 109.5z"/></svg>
+            </a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=blog/posts/gke-kms" title="Share on Facebook" rel="noreferrer noopener" target="_blank">
+              <svg viewBox="0 0 512 512"><path d="M288 192v-38.1c0-17.2 3.8-25.9 30.5-25.9H352V64h-55.9c-68.5 0-91.1 31.4-91.1 85.3V192h-45v64h45v192h83V256h56.4l7.6-64H288z"/></svg>
+            </a>
+          </div>
+
+          
+        </article>
+        <footer
+  class="footer scrollappear"
+>
+  <p>
+    Source code and Jekyll template information for this site can be found
+    <a
+      href="https://github.com/jcarpenter12/blog"
+      rel="noreferrer noopener"
+      target="_blank"
+      title="Download Chalk"
+      >here</a
+    >.
+  </p>
+</footer>
+
+      </div>
+    </div>
+  </main>
+  
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-169827407-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-169827407-1');
+  </script>
+
+
+<script type="text/javascript" src="/assets/vendor-130c9c254effc51f3283620bc635851da7b99c20901216948f11ba72ee13317f.js"></script>
+
+
+  <script type="text/javascript" src="/assets/webfonts-96493456d319d1bf419afdf8701552d4d486fee6afd304897d4fd81eb4e0cc0b.js"></script>
+
+
+
+  <script type="text/javascript" src="/assets/scrollappear-e2da8ea567e418637e31266cc5302126eaa79f62a2273739086358b589a89ee6.js"></script>
+
+
+<script type="text/javascript" src="/assets/application-cfde13ac81ddaf4351b2e739603e2baf688d0fcc9aba613fe62bbb1c7b037fb9.js"></script>
+
+
+  <script type="text/javascript" src="/assets/themetoggle-df0d3d73164dc26dffbd630182ae4d0dfa7bee6b694a2b5d565d73595b582bbf.js"></script>
+
+</body>
+</html>

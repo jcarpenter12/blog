@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>Words? | Securing Secrets on Google Kubernetes Engine using Cloud Build and Google’s Key Management Service (KMS) - Part 2 Building and Deploying an App to K8s</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta property="og:title" content="Securing Secrets on Google Kubernetes Engine using Cloud Build and Google’s Key Management Service (KMS) - Part 2 Building and Deploying an App to K8s">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="blog/posts/gke-kms-1">
+  <meta property="og:description" content="">
+  <meta property="og:site_name" content="Words?">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:url" content="blog/posts/gke-kms-1">
+  <meta name="twitter:title" content="Securing Secrets on Google Kubernetes Engine using Cloud Build and Google’s Key Management Service (KMS) - Part 2 Building and Deploying an App to K8s">
+  <meta name="twitter:description" content="">
+
+  
+    
+      <meta property="og:image" content="blog/assets/documentation/00_cover-2d7823ce46c8647412a138ef583366a71c65e6daa95501e7b6c383d72ce84ac7.PNG">
+      <meta name="twitter:image" content="blog/assets/documentation/00_cover-2d7823ce46c8647412a138ef583366a71c65e6daa95501e7b6c383d72ce84ac7.PNG">
+    
+  
+
+  <link href="blog/feed.xml" type="application/rss+xml" rel="alternate" title="Words? Last 10 blog posts" />
+
+  
+
+  
+
+    
+      <link rel="icon" type="image/x-icon" href="/assets/favicon-light-a98c41efc5ed9fcc06ac664c9e2f7a9b3c3b2e0a52357d221fe382f6f4abc8fc.ico">
+      <link rel="apple-touch-icon" href="/assets/apple-touch-icon-light-87d1f2a3a19b1500e5c1626a0492025ca5f7f97d24540dc5900288e92112925a.png">
+      <link rel="stylesheet" type="text/css" title="light" id="light" href="/assets/light-bb1553a18d0f1ccfe1aabc010584c49b4277a88503216b78906ba719e30019c1.css">
+      <link rel="stylesheet" type="text/css" title="dark" id="dark" href="/assets/dark-831218bc9e41aef39ee6a0bae4501195bccafcc13101ae2b9cd20493a6ec04c0.css" disabled="true">
+    
+
+  
+
+</head>
+
+<body>
+  <main>
+    <div class="grid grid-centered">
+      <div class="grid-cell">
+        <nav class="header-nav scrollappear">
+  <a href="/" class="header-logo" title="Words?">Words?</a>
+  <ul class="header-links">
+    
+      <li>
+        <a href="/about" title="About me">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-about">
+  <use href="/assets/about-ecf154b571ab8034ae00aeed91a3b7ad68db80b46d958753ad6216c919486e88.svg#icon-about" xlink:href="/assets/about-ecf154b571ab8034ae00aeed91a3b7ad68db80b46d958753ad6216c919486e88.svg#icon-about"></use>
+</svg>
+
+        </a>
+      </li>
+    
+    
+    
+    
+    
+      <li>
+        <a href="https://github.com/jcarpenter12" rel="noreferrer noopener" target="_blank" title="GitHub">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-github">
+  <use href="/assets/github-094f81040819f34343ee6ffff0980f17e2807b08b595eaaf66ae3554934fd78d.svg#icon-github" xlink:href="/assets/github-094f81040819f34343ee6ffff0980f17e2807b08b595eaaf66ae3554934fd78d.svg#icon-github"></use>
+</svg>
+
+        </a>
+      </li>
+    
+    
+    
+    
+    
+    
+    
+      <li>
+        <a href="https://www.linkedin.com/in/jack-carpenter-59a566b0" rel="noreferrer noopener" target="_blank" title="LinkedIn">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-linkedin">
+  <use href="/assets/linkedin-cdc5c107044324a3dfbea2e9ead15873f8dee304c37d73a046988956b706256e.svg#icon-linkedin" xlink:href="/assets/linkedin-cdc5c107044324a3dfbea2e9ead15873f8dee304c37d73a046988956b706256e.svg#icon-linkedin"></use>
+</svg>
+
+        </a>
+      </li>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      <li>
+        <a href="/feed.xml" rel="noreferrer noopener" target="_blank" title="RSS">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-rss">
+  <use href="/assets/rss-541ec5cea9cefd10d2fcfec01888f3f231a8829940249835fa7b7b3a12ae0d0d.svg#icon-rss" xlink:href="/assets/rss-541ec5cea9cefd10d2fcfec01888f3f231a8829940249835fa7b7b3a12ae0d0d.svg#icon-rss"></use>
+</svg>
+
+        </a>
+      </li>
+    
+    
+      <li>
+        <a onclick="toggle()" title="Toggle Theme">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon-theme">
+  <use href="/assets/theme-66869e0bf8dab34bae1c86bda400327b772e0be69e8dc28d3ede896e771320ed.svg#icon-theme" xlink:href="/assets/theme-66869e0bf8dab34bae1c86bda400327b772e0be69e8dc28d3ede896e771320ed.svg#icon-theme"></use>
+</svg>
+
+        </a>
+      </li>
+    
+  </ul>
+</nav>
+
+
+
+        <article class="article scrollappear">
+          <header class="article-header">
+            <h1>Securing Secrets on Google Kubernetes Engine using Cloud Build and Google’s Key Management Service (KMS) - Part 2 Building and Deploying an App to K8s</h1>
+            <p></p>
+            <div class="article-list-footer">
+  <span class="article-list-date">
+    June 13, 2020
+  </span>
+  <span class="article-list-divider">-</span>
+  <span class="article-list-minutes">
+    
+    
+      10 minute read
+    
+  </span>
+  <span class="article-list-divider">-</span>
+  <div class="article-list-tags">
+    
+      
+      <a href="/tag/gcp" title="See all posts with tag 'GCP'">GCP</a>
+    
+      
+      <a href="/tag/k8s" title="See all posts with tag 'K8s'">K8s</a>
+    
+      
+      <a href="/tag/cloudbuild" title="See all posts with tag 'Cloud-Build'">Cloud-Build</a>
+    
+      
+      <a href="/tag/encryption" title="See all posts with tag 'Encryption'">Encryption</a>
+    
+      
+      <a href="/tag/kms" title="See all posts with tag 'KMS'">KMS</a>
+    
+      
+      <a href="/tag/CI/CD" title="See all posts with tag ''"></a>
+    
+  </div>
+</div>
+          </header>
+
+          <div class="article-content">
+            <p><a href="/assets/documentation/00_cover-2d7823ce46c8647412a138ef583366a71c65e6daa95501e7b6c383d72ce84ac7.PNG">
+  <img src="/assets/documentation/00_cover-2d7823ce46c8647412a138ef583366a71c65e6daa95501e7b6c383d72ce84ac7.PNG" alt="Chalk intro" class="zooming" data-rjs="/assets/documentation/00_cover-2d7823ce46c8647412a138ef583366a71c65e6daa95501e7b6c383d72ce84ac7.PNG" data-zooming-width="913" data-zooming-height="200" />
+</a></p>
+
+<h3 id="overview">Overview</h3>
+<p>In this post I will go over setting up Google Cloud Build in order to deploy applications to the GKE cluster we created in the last post. Cloud build will also allow us to deploy secrets stored in Google’s Secret Manager without the need to upload them manually from another machine.</p>
+
+<p>For this demonstration I will first create a simple Hello-World app and then modify the same app to use an API in order to demonstrate how secrets can be used in Kubernetes.</p>
+
+<h3 id="writing-a-flask-app-and-running-it-locally-with-docker-and-minikube">Writing a Flask App and Running it Locally with Docker and Minikube</h3>
+<p>Flask is a widely used web app framework for Python, the first part of this post will cover creating a Hello World App, containerising it with Docker, running it using the Docker daemon and then running it on a local K8s cluster using Minikube. Once this has been completed I will go over deploying this same app to the GKE cluster created in the last post using Google Cloud Build.</p>
+
+<p>In this example I have used Pipenv to manage virtual Python environments but you don’t have to use it, more info on Pipenv can be found <a href="https://pipenv.pypa.io/en/latest/">here</a>.</p>
+
+<p>The source code for the examples can be found <a href="https://github.com/jcarpenter12/gke-kms-cloud-build">here</a>.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># Initial setup for pipenv from within project directory</span>
+pipenv <span class="nb">install </span>flask
+
+<span class="c"># Change into the pipenv virtual env</span>
+pipenv shell</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># main.py
+</span><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">route</span><span class="p">(</span><span class="s">"/"</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">hello</span><span class="p">():</span>
+    <span class="k">return</span> <span class="s">"Hello World!"</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">app</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="s">"0.0.0.0"</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># Running the script locally</span>
+python main.py</code></pre></figure>
+
+<h3 id="running-with-docker">Running with Docker</h3>
+<p>First we need to create a Dockerfile with a list of instructions to import the Python script and expose it on a port.</p>
+
+<figure class="highlight"><pre><code class="language-docker" data-lang="docker"><span class="k">FROM</span><span class="s"> python:3.6.9</span>
+<span class="k">RUN </span>pip <span class="nb">install </span>pipenv
+<span class="k">RUN </span><span class="nb">mkdir </span>app/
+<span class="k">COPY</span><span class="s"> Pipfile* /app/</span>
+<span class="k">RUN </span><span class="nb">cd</span> /app <span class="o">&amp;&amp;</span> pipenv lock <span class="nt">--requirements</span> <span class="o">&gt;</span> requirements.txt
+<span class="k">RUN </span>pip <span class="nb">install</span> <span class="nt">--upgrade</span> pip <span class="o">&amp;&amp;</span> pip <span class="nb">install</span> <span class="nt">-r</span> /app/requirements.txt
+<span class="k">COPY</span><span class="s"> main.py /app/</span>
+<span class="k">WORKDIR</span><span class="s"> app/</span>
+<span class="k">CMD</span><span class="s"> ["python", "-u", "main.py"]</span>
+<span class="k">EXPOSE</span><span class="s"> 8080</span></code></pre></figure>
+
+<p>Then to build and run the Docker container run the following:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">docker build <span class="nb">.</span> <span class="nt">-t</span> hello-world-flask
+
+<span class="c"># -p below is used to map the port to your local machine</span>
+ docker run <span class="nt">-p</span> 8080:8080 hello-world-flask</code></pre></figure>
+
+<p>Go to <code class="highlighter-rouge">localhost:8080</code> and you should see the same output as before, but this time the process is running on the Docker container.</p>
+
+<h3 id="running-with-minikube">Running with Minikube</h3>
+<p>Minikube is a tool that sets up a virtual Kubernetes cluster on your machine. This step isn’t strictly necessary but I like to use Minikube during development in order to test that Deployments and Services work as expected without incurring the cost of running a Kubernetes cluster. More info on Minikube can be found <a href="https://minikube.sigs.k8s.io/docs/">here</a>.</p>
+
+<p>In order to deploy the app to Minikube we will first need to create a Deployment and then expose it as a Service in order to access it similarly as we have done with the Docker run.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">minikube start
+<span class="c"># setup docker daemon with minikube</span>
+<span class="nb">eval</span> <span class="si">$(</span>minikube docker-env<span class="si">)</span>
+<span class="c"># rebuild docker container on minikube daemon</span>
+docker build <span class="nb">.</span> <span class="nt">-t</span> hello-world-flask:latest</code></pre></figure>
+
+<p>Once Minikube has started you should be able to interact with the cluster using kubectl.</p>
+
+<p>Below is the file <code class="highlighter-rouge">k8s/deployment_mk.yaml</code>. This script consists of both the Service and the deployment. The Service is used to expose the app on a given port on the cluster.</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="na">apiVersion</span><span class="pi">:</span> <span class="s">v1</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">Service</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">hello-world-service</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">selector</span><span class="pi">:</span>
+    <span class="na">app</span><span class="pi">:</span> <span class="s">hello-world</span>
+  <span class="na">ports</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">protocol</span><span class="pi">:</span> <span class="s2">"</span><span class="s">TCP"</span>
+    <span class="na">port</span><span class="pi">:</span> <span class="m">8080</span>
+    <span class="na">targetPort</span><span class="pi">:</span> <span class="m">8080</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">LoadBalancer</span>
+
+<span class="nn">---</span>
+<span class="na">apiVersion</span><span class="pi">:</span> <span class="s">apps/v1</span>
+<span class="na">kind</span><span class="pi">:</span> <span class="s">Deployment</span>
+<span class="na">metadata</span><span class="pi">:</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">hello-world</span>
+<span class="na">spec</span><span class="pi">:</span>
+  <span class="na">selector</span><span class="pi">:</span>
+    <span class="na">matchLabels</span><span class="pi">:</span>
+      <span class="na">app</span><span class="pi">:</span> <span class="s">hello-world</span>
+  <span class="na">replicas</span><span class="pi">:</span> <span class="m">1</span>
+  <span class="na">template</span><span class="pi">:</span>
+    <span class="na">metadata</span><span class="pi">:</span>
+      <span class="na">labels</span><span class="pi">:</span>
+        <span class="na">app</span><span class="pi">:</span> <span class="s">hello-world</span>
+    <span class="na">spec</span><span class="pi">:</span>
+      <span class="na">containers</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">hello-world</span>
+        <span class="na">image</span><span class="pi">:</span> <span class="s">hello-world-flask:latest</span>
+        <span class="na">imagePullPolicy</span><span class="pi">:</span> <span class="s">Never</span>
+        <span class="na">ports</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">containerPort</span><span class="pi">:</span> <span class="s">8080</span></code></pre></figure>
+
+<p>To apply the deployment run the following:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">kubectl apply <span class="nt">-f</span> k8s/deployment_mk.yaml
+<span class="c"># Open service on minikube</span>
+minikube service hello-world-service</code></pre></figure>
+
+<h3 id="deploying-to-gke-with-google-cloud-build">Deploying to GKE with Google Cloud Build</h3>
+<p>The quick start guide for Google Cloud Build can be found <a href="https://cloud.google.com/cloud-build/docs/quickstarts">here</a>.</p>
+
+<p>The process is divided into two stages. The first building the image and pushing it to Google Cloud Container Registry and the other deploying that image to the GKE cluster.</p>
+
+<p>The first section of the yaml file dictates the steps for building the image and pushing it to the container registry.</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="na">steps</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s1">'</span><span class="s">gcr.io/cloud-builders/docker'</span>
+  <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span> <span class="s1">'</span><span class="s">build'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">-t'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">gcr.io/$PROJECT_ID/hello-world-flask'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">.'</span> <span class="pi">]</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s1">'</span><span class="s">gcr.io/cloud-builders/docker'</span>
+  <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">push'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">gcr.io/$PROJECT_ID/hello-world-flask'</span><span class="pi">]</span></code></pre></figure>
+
+<p>Above the $PROJECT_ID is replaced at run time during the build with the project Cloud Build runs in.</p>
+
+<p>The second part of the file describes the steps to push the deployment to the GKE cluster. Note the different file from the Minikube deployment, the reason for this being that Minikube needs to use a different image pull policy in order to run than a usual Kubernetes cluster.</p>
+
+<p>The sed command here is used to replace the image name of the deployment file
+at run time from the Cloud Build context (somewhat hacky I know).</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s1">'</span><span class="s">bash'</span>
+  <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">sed'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">-i'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">s/@@IMAGE_NAME@@/gcr.io\/$PROJECT_ID\/hello-world-flask/g'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">k8s/deployment.yaml'</span><span class="pi">]</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">gcr.io/cloud-builders/gke-deploy"</span>
+  <span class="na">args</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">run'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">--filename'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">k8s/deployment.yaml'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">--image'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">gcr.io/$PROJECT_ID/hello-world-flask'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">--location'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">europe-west2'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">--cluster'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">default-cluster'</span></code></pre></figure>
+
+<p>Note that the compute zone and container cluster must match your cluster.</p>
+
+<p>Run the build</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">gcloud builds submit <span class="nt">--config</span> cloudbuild.yaml</code></pre></figure>
+
+<p>This will deploy the app to your GKE cluster. Navigate to the Service in the console and access the link provided to see it running.</p>
+
+<h3 id="updating-the-app-to-use-a-secret">Updating the App to use a Secret</h3>
+
+<p>Now that the hello world app is up and running, I am going to update it in to use an API in order to display the weather. This will demonstrate an example of how to secure and deploy secrets using Googles Secret Manager and Cloud Build.</p>
+
+<p>For this example I am using the openWeather API which can be found <a href="https://home.openweathermap.org/">here</a>.</p>
+
+<p>To follow along with this tutorial you will need to set up an account and generate an API key using the link above.</p>
+
+<p>Once you have done that set the API key as an environment variable in your shell like so:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">export </span><span class="nv">OW_API_KEY</span><span class="o">=</span>”yourapikey”</code></pre></figure>
+
+<p>The basic Python scripts now looks like this.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+<span class="c1"># Constants
+</span><span class="n">API_KEY</span> <span class="o">=</span> <span class="n">os</span><span class="p">.</span><span class="n">getenv</span><span class="p">(</span><span class="s">"OW_API_KEY"</span><span class="p">)</span>
+<span class="n">BASE_URL</span> <span class="o">=</span> <span class="s">"https://api.openweathermap.org/data/2.5/weather"</span>
+
+<span class="n">app</span> <span class="o">=</span> <span class="n">Flask</span><span class="p">(</span><span class="n">__name__</span><span class="p">)</span>
+
+
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">route</span><span class="p">(</span><span class="s">"/"</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s">"city"</span><span class="p">:</span> <span class="s">"london"</span><span class="p">})</span>
+<span class="o">@</span><span class="n">app</span><span class="p">.</span><span class="n">route</span><span class="p">(</span><span class="s">"/&lt;city&gt;"</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">weather</span><span class="p">(</span><span class="n">city</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s">f"</span><span class="si">{</span><span class="n">BASE_URL</span><span class="si">}</span><span class="s">?q=</span><span class="si">{</span><span class="n">city</span><span class="si">}</span><span class="s">&amp;appid=</span><span class="si">{</span><span class="n">API_KEY</span><span class="si">}</span><span class="s">"</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">).</span><span class="n">json</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="s">"weather"</span><span class="p">)[</span><span class="mi">0</span><span class="p">].</span><span class="n">get</span><span class="p">(</span><span class="s">"description"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">except</span> <span class="nb">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">e</span>
+        <span class="k">return</span> <span class="s">"API Call Failed"</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">app</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="mi">8080</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="s">"0.0.0.0"</span><span class="p">)</span></code></pre></figure>
+
+<p>All this script does is create a flask app that lets a user pass in the name of a city and returns the description of the current weather conditions for that city using the API.</p>
+
+<p>As before run the script like so</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">python main.py</code></pre></figure>
+
+<p>Pass in the name of the city required like so “http://0.0.0.0:8080/madrid”. The
+app will default to London if nothing is passed.</p>
+
+<h4 id="build-the-docker-container">Build the Docker Container</h4>
+
+<figure class="highlight"><pre><code class="language-docker" data-lang="docker"><span class="k">FROM</span><span class="s"> python:3.6.9</span>
+<span class="k">RUN </span>pip <span class="nb">install </span>pipenv
+<span class="k">RUN </span><span class="nb">mkdir </span>app/
+<span class="k">COPY</span><span class="s"> Pipfile* /app/</span>
+<span class="k">RUN </span><span class="nb">cd</span> /app <span class="o">&amp;&amp;</span> pipenv lock <span class="nt">--requirements</span> <span class="o">&gt;</span> requirements.txt
+<span class="k">RUN </span>pip <span class="nb">install</span> <span class="nt">--upgrade</span> pip <span class="o">&amp;&amp;</span> pip <span class="nb">install</span> <span class="nt">-r</span> /app/requirements.txt
+<span class="k">COPY</span><span class="s"> main.py /app/</span>
+<span class="k">WORKDIR</span><span class="s"> app/</span>
+<span class="k">CMD</span><span class="s"> ["python", "-u", "main.py"]</span>
+<span class="k">EXPOSE</span><span class="s"> 8080</span></code></pre></figure>
+
+<p>Build and run as follows</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">docker build <span class="nb">.</span> <span class="nt">-t</span> weather-app
+<span class="c"># -e below maps your shell’s environment variable to the docker container</span>
+docker run <span class="nt">-p</span> 8080:8080 <span class="nt">-e</span> <span class="nv">OW_API_KEY</span><span class="o">=</span><span class="nv">$OW_API_KEY</span> weather-app</code></pre></figure>
+
+<h4 id="deploy-to-minikube">Deploy to Minikube</h4>
+
+<p>The deployment file is largely the same as the one described above. The source for this deployment can be found <a href="https://github.com/jcarpenter12/gke-kms-cloud-build/blob/devbranch/weather_app/k8s/deployment_mk.yaml">here</a>.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">minikube start
+<span class="c"># setup docker daemon with minikube</span>
+<span class="nb">eval</span> <span class="si">$(</span>minikube docker-env<span class="si">)</span>
+<span class="c"># rebuild docker on minikube daemon</span>
+docker build <span class="nb">.</span> <span class="nt">-t</span> weather-app
+<span class="c"># In order to add the secret to minikube run the following, this creates a secret on the cluster</span>
+kubectl create secret generic weathersecret <span class="nt">--from-literal</span><span class="o">=</span><span class="nv">API_KEY</span><span class="o">=</span><span class="nv">$OW_API_KEY</span>
+kubectl apply <span class="nt">-f</span> k8s/deployment_mk.yaml</code></pre></figure>
+
+<p>Once this has been run you will be able to access the Service as before using:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">minikube service weather-app-service</code></pre></figure>
+
+<h4 id="deploy-to-gke">Deploy to GKE</h4>
+
+<p>In order to deploy this app to GKE we need to add the API key secret to the Secret
+Manager in the Google Cloud Console.</p>
+
+<p>Go to the Secret Manager within the console and select ‘Create Secret’.</p>
+
+<p><a href="/assets/documentation/03_secret_manager-d3c577fa8e2b483209a50d0ffd83668b26e8c3890a58dce045f7ed92189f3081.png">
+  <img src="/assets/documentation/03_secret_manager-d3c577fa8e2b483209a50d0ffd83668b26e8c3890a58dce045f7ed92189f3081.png" alt="Chalk intro" class="zooming" data-rjs="/assets/documentation/03_secret_manager-d3c577fa8e2b483209a50d0ffd83668b26e8c3890a58dce045f7ed92189f3081.png" data-zooming-width="598" data-zooming-height="789" />
+</a></p>
+
+<p>Once this has been completed we need to update the <code class="highlighter-rouge">cloudbuild.yaml</code> file in
+order to deploy the secret to the cluster during the build.</p>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="na">steps</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s1">'</span><span class="s">gcr.io/cloud-builders/docker'</span>
+  <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span> <span class="s1">'</span><span class="s">build'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">-t'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">gcr.io/$PROJECT_ID/weather-app'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">.'</span> <span class="pi">]</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s1">'</span><span class="s">gcr.io/cloud-builders/docker'</span>
+  <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">push'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">gcr.io/$PROJECT_ID/weather-app'</span><span class="pi">]</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s1">'</span><span class="s">gcr.io/cloud-builders/gcloud'</span>
+  <span class="na">entrypoint</span><span class="pi">:</span> <span class="s1">'</span><span class="s">bash'</span>
+  <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span> <span class="s1">'</span><span class="s">-c'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">gcloud</span><span class="nv"> </span><span class="s">secrets</span><span class="nv"> </span><span class="s">versions</span><span class="nv"> </span><span class="s">access</span><span class="nv"> </span><span class="s">latest</span><span class="nv"> </span><span class="s">--secret=weathersecret</span><span class="nv"> </span><span class="s">&gt;</span><span class="nv"> </span><span class="s">secret.txt'</span> <span class="pi">]</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s1">'</span><span class="s">bash'</span>
+  <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">sed'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">-i'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">s/@@IMAGE_NAME@@/gcr.io\/$PROJECT_ID\/weather-app/g'</span><span class="pi">,</span> <span class="s1">'</span><span class="s">k8s/deployment.yaml'</span><span class="pi">]</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">gcr.io/cloud-builders/gke-deploy"</span>
+  <span class="na">args</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">run'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">--filename'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">k8s/deployment.yaml'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">--image'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">gcr.io/$PROJECT_ID/weather-app'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">--location'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">europe-west2'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">--cluster'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">default-cluster'</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s1">'</span><span class="s">gcr.io/cloud-builders/kubectl'</span>
+  <span class="na">id</span><span class="pi">:</span> <span class="s">DeploySecret</span>
+  <span class="na">args</span><span class="pi">:</span> <span class="pi">[</span><span class="s1">'</span><span class="s">create'</span><span class="pi">,</span><span class="s1">'</span><span class="s">secret'</span><span class="pi">,</span><span class="s1">'</span><span class="s">generic'</span><span class="pi">,</span><span class="s1">'</span><span class="s">weathersecret'</span><span class="pi">,</span><span class="s1">'</span><span class="s">--from-file=API_KEY=secret.txt'</span><span class="pi">]</span>
+  <span class="na">env</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">CLOUDSDK_COMPUTE_ZONE=europe-west2'</span>
+  <span class="pi">-</span> <span class="s1">'</span><span class="s">CLOUDSDK_CONTAINER_CLUSTER=default-cluster'</span></code></pre></figure>
+
+<p>Once this has been deployed you should be able to access the Service from
+within the Cloud Console. GKE handles the envelope encryption of the secrets
+for us on deployment to the cluster and that’s all there is to it once the
+Applciation Layer Encryption is enable on the GKE cluster. All secrets are stored remotely in the Secret Manager and GKE
+handles the rest.</p>
+
+<h3 id="setting-up-a-cloud-build-trigger">Setting up a Cloud Build Trigger</h3>
+
+<p>Up until this point we have been running Google Cloud Build from our local
+machine, but it can be set up in order to run whenever a change is made to a
+repository or a pull request is merged.</p>
+
+<p>Open the Cloud Build service from within the console and select ‘Triggers’,
+‘Connect Repository’.</p>
+
+<p>In this example I am using a repo in github but other git services can be used.</p>
+
+<p>Authenticate to your chosen repository and choose the repo you want to set up a
+trigger for.</p>
+
+<p>Once you have created your trigger you can configure it to run from a specific
+branch when a change is made and what files to run.</p>
+
+<p><a href="/assets/documentation/05_cb_trigger-8bd1c765ea22903fcdd4a645dab50432b3ba18fb6e8297c0d6da856a9b40b6c4.png">
+  <img src="/assets/documentation/05_cb_trigger-8bd1c765ea22903fcdd4a645dab50432b3ba18fb6e8297c0d6da856a9b40b6c4.png" alt="Chalk intro" class="zooming" data-rjs="/assets/documentation/05_cb_trigger-8bd1c765ea22903fcdd4a645dab50432b3ba18fb6e8297c0d6da856a9b40b6c4.png" data-zooming-width="540" data-zooming-height="837" />
+</a></p>
+
+<p>Then whenever you push to your repo, provided your conditions set in the
+trigger have been met it will kick off a build and new entry will be made in the
+Cloud Build History tab.</p>
+
+          </div>
+          <div class="article-share">
+            
+            
+            <a href="https://twitter.com/home?status=Securing+Secrets+on+Google+Kubernetes+Engine+using+Cloud+Build+and+Google%E2%80%99s+Key+Management+Service+...%20-%20blog/posts/gke-kms-1" title="Share on Twitter" rel="noreferrer noopener" target="_blank">
+              <svg viewBox="0 0 512 512"><path d="M492 109.5c-17.4 7.7-36 12.9-55.6 15.3 20-12 35.4-31 42.6-53.6 -18.7 11.1-39.4 19.2-61.5 23.5C399.8 75.8 374.6 64 346.8 64c-53.5 0-96.8 43.4-96.8 96.9 0 7.6 0.8 15 2.5 22.1 -80.5-4-151.9-42.6-199.6-101.3 -8.3 14.3-13.1 31-13.1 48.7 0 33.6 17.2 63.3 43.2 80.7C67 210.7 52 206.3 39 199c0 0.4 0 0.8 0 1.2 0 47 33.4 86.1 77.7 95 -8.1 2.2-16.7 3.4-25.5 3.4 -6.2 0-12.3-0.6-18.2-1.8 12.3 38.5 48.1 66.5 90.5 67.3 -33.1 26-74.9 41.5-120.3 41.5 -7.8 0-15.5-0.5-23.1-1.4C62.8 432 113.7 448 168.3 448 346.6 448 444 300.3 444 172.2c0-4.2-0.1-8.4-0.3-12.5C462.6 146 479 129 492 109.5z"/></svg>
+            </a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=blog/posts/gke-kms-1" title="Share on Facebook" rel="noreferrer noopener" target="_blank">
+              <svg viewBox="0 0 512 512"><path d="M288 192v-38.1c0-17.2 3.8-25.9 30.5-25.9H352V64h-55.9c-68.5 0-91.1 31.4-91.1 85.3V192h-45v64h45v192h83V256h56.4l7.6-64H288z"/></svg>
+            </a>
+          </div>
+
+          
+        </article>
+        <footer
+  class="footer scrollappear"
+>
+  <p>
+    Source code and Jekyll template information for this site can be found
+    <a
+      href="https://github.com/jcarpenter12/blog"
+      rel="noreferrer noopener"
+      target="_blank"
+      title="Download Chalk"
+      >here</a
+    >.
+  </p>
+</footer>
+
+      </div>
+    </div>
+  </main>
+  
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-169827407-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'UA-169827407-1');
+  </script>
+
+
+<script type="text/javascript" src="/assets/vendor-130c9c254effc51f3283620bc635851da7b99c20901216948f11ba72ee13317f.js"></script>
+
+
+  <script type="text/javascript" src="/assets/webfonts-96493456d319d1bf419afdf8701552d4d486fee6afd304897d4fd81eb4e0cc0b.js"></script>
+
+
+
+  <script type="text/javascript" src="/assets/scrollappear-e2da8ea567e418637e31266cc5302126eaa79f62a2273739086358b589a89ee6.js"></script>
+
+
+<script type="text/javascript" src="/assets/application-cfde13ac81ddaf4351b2e739603e2baf688d0fcc9aba613fe62bbb1c7b037fb9.js"></script>
+
+
+  <script type="text/javascript" src="/assets/themetoggle-df0d3d73164dc26dffbd630182ae4d0dfa7bee6b694a2b5d565d73595b582bbf.js"></script>
+
+</body>
+</html>

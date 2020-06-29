@@ -1,4 +1,0 @@
----
-slug: kms
-name: KMS
----

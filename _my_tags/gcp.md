@@ -1,4 +1,0 @@
----
-slug: gcp
-name: GCP
----
